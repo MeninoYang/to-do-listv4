@@ -5,6 +5,8 @@ const boxlista = document.getElementById("box-lista");
 const deletedTasksList = document.getElementById("deletedTasksList");
 const emptyMessage = document.getElementById("emptyMessage");
 
+document.addEventListener("click", handleTaskClick);
+
 
 function toggleLeftMenu() {
     const menuLateralEsquerda = document.getElementById('menuLateralEsquerda');
@@ -66,20 +68,26 @@ function moveTaskToDeleted(target) {
         deletedTask.classList.add("checked");
     }
     deletedTask.innerHTML = `${taskText} <small>(${dateTime})</small> <button class="delete-btn">x</button>`;
-    deletedTasksList.appendChild(deletedTask);
 
+    const originalList = target.parentElement.parentElement.id;
+    deletedTask.setAttribute('data-original-list', originalList);
+
+    deletedTasksList.appendChild(deletedTask);
     target.parentElement.remove();
     updateEmptyMessage();
     saveTasks();
 }
 
+deletedTasksList.addEventListener("click", handleDeletedTaskClick);
+
 function handleDeletedTaskClick(e) {
-    if (e.target.tagName === "LI") {
-        restoreTask(e.target);
-    } else if (e.target.classList.contains("delete-btn")) {
+    if (e.target.tagName === "BUTTON" && e.target.classList.contains("delete-btn")) {
         e.target.parentElement.remove();
         updateEmptyMessage();
         saveTasks();
+    } 
+    else if (e.target.tagName === "LI") {
+        restoreTask(e.target);
     }
 }
 
@@ -87,29 +95,56 @@ function restoreTask(taskElement) {
     const taskText = taskElement.innerHTML.split(' <small>')[0];
     const taskChecked = taskElement.classList.contains("checked");
 
+    const originalListId = taskElement.getAttribute('data-original-list');
+    const originalList = document.getElementById(originalListId);
+
+    if (!originalList) {
+        alert('A lista original não foi encontrada!');
+        return;
+    }
+
     const restoredTask = document.createElement("li");
     restoredTask.innerHTML = taskText;
+
+    restoredTask.addEventListener("click", handleTaskClick);
+
     if (taskChecked) {
         restoredTask.classList.add("verificado");
     }
+    
     const span = document.createElement("span");
     span.innerHTML = "\u00d7";
     restoredTask.appendChild(span);
 
-    boxlista.appendChild(restoredTask);
+    originalList.appendChild(restoredTask);
     updateEmptyMessage();
     taskElement.remove();
     saveTasks();
 }
 
 function saveTasks() {
-    localStorage.setItem("tasks", boxlista.innerHTML);
+    const lists = document.querySelectorAll('.box-to-do ul');
+    lists.forEach((ul, index) => {
+        localStorage.setItem(`tasksList${index}`, ul.innerHTML);
+    });
     localStorage.setItem("deletedTasks", deletedTasksList.innerHTML);
 }
 
 function loadTasks() {
-    boxlista.innerHTML = localStorage.getItem("tasks") || '';
+    const lists = document.querySelectorAll('.box-to-do ul');
+    lists.forEach((ul, index) => {
+        ul.innerHTML = localStorage.getItem(`tasksList${index}`) || '';
+
+        ul.querySelectorAll('li').forEach(task => {
+            task.addEventListener("click", handleTaskClick);
+        });
+    });
     deletedTasksList.innerHTML = localStorage.getItem("deletedTasks") || '';
+
+    deletedTasksList.querySelectorAll('li').forEach(task => {
+        task.addEventListener("click", handleDeletedTaskClick);
+    });
+
     updateEmptyMessage();
 }
 
@@ -293,6 +328,8 @@ function addNewList() {
     const newList = document.createElement('div');
     newList.classList.add('box-to-do');
 
+    const listId = `list-${Date.now()}`; 
+
     newList.innerHTML = `
         <h2>
             <span class="lista-titulo" onclick="setupEditTitle(this)">Nova lista</span>
@@ -303,34 +340,37 @@ function addNewList() {
             <input type="text" placeholder="Escreva aqui...">
             <button onclick="addTask(this)">Adicionar</button>
         </div>
-        <ul></ul>
+        <ul id="${listId}"></ul>
     `;
 
     document.getElementById('listasContainer').appendChild(newList);
+
+    const ul = newList.querySelector("ul");
+    ul.addEventListener("click", handleTaskClick);
+
     document.getElementById('addListButton').style.display = 'none';
 }
 
 function addTask(button) {
     const input = button ? button.previousElementSibling : caixaescreve;
-    console.log("Input:", input); // Verifique o valor do input
-
     const taskText = sanitizeInput(input.value);
-    console.log("Task Text:", taskText); // Verifique o texto da tarefa
 
     if (taskText === '') {
         alert("Você deve escrever algo primeiro");
     } else {
         const li = document.createElement("li");
         li.innerHTML = taskText;
+        
+        li.addEventListener("click", handleTaskClick);
+
         const span = document.createElement("span");
         span.innerHTML = "\u00d7";
         li.appendChild(span);
 
         const ul = button ? button.parentElement.nextElementSibling : boxlista;
-        console.log("Appending to UL:", ul); // Verifique se a UL está correta
         ul.appendChild(li);
 
-        input.value = ""; 
+        input.value = "";
         saveTasks();
     }
 }
