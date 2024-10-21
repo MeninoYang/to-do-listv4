@@ -30,15 +30,11 @@ function addTask(button) {
     
     if (taskText) {
         const taskItem = document.createElement('li');
-        
-        // Armazena a data/hora atual
         const createdTime = new Date().toLocaleString(); // Formato de data/hora local
 
-        // Cria a tarefa com a data/hora
         taskItem.textContent = taskText;
         taskItem.setAttribute('data-created-time', createdTime); // Atributo para armazenar a hora
 
-        // Adiciona evento mouseover para mostrar a hora
         taskItem.addEventListener('mouseover', function() {
             const tooltip = document.createElement('span');
             tooltip.className = 'tooltip';
@@ -46,7 +42,6 @@ function addTask(button) {
             taskItem.appendChild(tooltip);
         });
 
-        // Adiciona evento mouseout para remover a hora
         taskItem.addEventListener('mouseout', function() {
             const tooltip = taskItem.querySelector('.tooltip');
             if (tooltip) {
@@ -55,7 +50,7 @@ function addTask(button) {
         });
 
         document.getElementById('box-lista').appendChild(taskItem);
-        input.value = ''; // Limpa o campo de entrada
+        input.value = ''; 
     }
 }
 
@@ -89,7 +84,7 @@ function handleTaskClick(e) {
         e.target.classList.toggle("verificado");
         saveTasks(); // Atualiza o localStorage quando uma tarefa for verificada
     } else if (e.target.tagName === "SPAN") {
-        moveTaskToDeleted(e.target); // Move a tarefa para a lista de deletados
+        moveTaskToDeleted(e.target); 
     }
 }
 
@@ -110,18 +105,18 @@ function moveTaskToDeleted(target) {
     deletedTasksList.appendChild(deletedTask);
     target.parentElement.remove();
     saveTasks(); // Atualiza o localStorage
-    updateEmptyMessage(); // Verifica se a lista de deletados está vazia
+    updateEmptyMessage();
 }
 
 deletedTasksList.addEventListener("click", handleDeletedTaskClick);
 
 function handleDeletedTaskClick(e) {
     if (e.target.tagName === "BUTTON" && e.target.classList.contains("delete-btn")) {
-        e.target.parentElement.remove(); // Remove a tarefa ao clicar no botão delete
-        saveTasks(); // Atualiza o localStorage
-        updateEmptyMessage(); // Verifica se a lista de deletados está vazia
+        e.target.parentElement.remove(); 
+        saveTasks();
+        updateEmptyMessage(); 
     } else if (e.target.tagName === "LI") {
-        restoreTask(e.target); // Restaura a tarefa ao clicar nela
+        restoreTask(e.target); 
     }
 }
 
@@ -169,32 +164,32 @@ function restoreTask(taskElement) {
 function saveTasks() {
     const lists = document.querySelectorAll('.box-to-do ul');
     lists.forEach((ul, index) => {
-        localStorage.setItem(`tasksList${index}`, ul.innerHTML); // Salva as tarefas de cada lista
+        localStorage.setItem(`tasksList${index}`, ul.innerHTML); 
     });
 
-    localStorage.setItem("deletedTasks", deletedTasksList.innerHTML); // Salva as tarefas deletadas
+    localStorage.setItem("deletedTasks", deletedTasksList.innerHTML); 
 }
 
 function loadTasks() {
     const lists = document.querySelectorAll('.box-to-do ul');
     lists.forEach((ul, index) => {
-        ul.innerHTML = localStorage.getItem(`tasksList${index}`) || ''; // Carrega cada lista
+        ul.innerHTML = localStorage.getItem(`tasksList${index}`) || ''; 
         ul.querySelectorAll('li').forEach(task => {
-            task.addEventListener("click", handleTaskClick); // Adiciona o evento click a cada tarefa
+            task.addEventListener("click", handleTaskClick); 
         });
     });
 
-    deletedTasksList.innerHTML = localStorage.getItem("deletedTasks") || ''; // Carrega a lista de deletados
+    deletedTasksList.innerHTML = localStorage.getItem("deletedTasks") || ''; 
     deletedTasksList.querySelectorAll('li').forEach(task => {
-        task.addEventListener("click", handleDeletedTaskClick); // Adiciona o evento click para restaurar
+        task.addEventListener("click", handleDeletedTaskClick); 
     });
 
-    updateEmptyMessage(); // Atualiza a mensagem de vazio
+    updateEmptyMessage(); 
 }
 
 
 function updateEmptyMessage() {
-    emptyMessage.style.display = deletedTasksList.children.length === 0 ? 'block' : 'none'; // Atualiza a mensagem "sem tarefas"
+    emptyMessage.style.display = deletedTasksList.children.length === 0 ? 'block' : 'none'; 
 }
 
 function mostrarCadastroModal() {
@@ -213,13 +208,13 @@ function showModal(modalId) {
         console.error(`Modal com o ID '${modalId}' não foi encontrado.`);
         return;
     }
-    modal.style.display = "block"; // Exibe o modal novamente
-    modal.classList.remove('hidden'); // Remova qualquer classe de ocultação, se houver
+    modal.style.display = "block"; 
+    modal.classList.remove('hidden');
 }
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    modal.style.display = 'none';  // Esconde o modal
+    modal.style.display = 'none'; 
 }
 
 window.onclick = function(event) {
@@ -227,11 +222,9 @@ window.onclick = function(event) {
     modals.forEach(modalId => {
         const modal = document.getElementById(modalId);
         if (modal) {
-            // Fechar o modal se o clique for fora do modal
             if (event.target === modal) {
                 closeModal(modalId);
             }
-            // Fechar o modal se o botão "X" for clicado
             const closeButton = modal.querySelector('.fechar');
             if (event.target === closeButton) {
                 closeModal(modalId);
