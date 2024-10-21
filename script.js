@@ -25,6 +25,41 @@ function sanitizeInput(input) {
 }
 
 function addTask(button) {
+    const input = button.previousElementSibling;
+    const taskText = input.value;
+    
+    if (taskText) {
+        const taskItem = document.createElement('li');
+        
+        // Armazena a data/hora atual
+        const createdTime = new Date().toLocaleString(); // Formato de data/hora local
+
+        // Cria a tarefa com a data/hora
+        taskItem.textContent = taskText;
+        taskItem.setAttribute('data-created-time', createdTime); // Atributo para armazenar a hora
+
+        // Adiciona evento mouseover para mostrar a hora
+        taskItem.addEventListener('mouseover', function() {
+            const tooltip = document.createElement('span');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = `Criado em: ${createdTime}`;
+            taskItem.appendChild(tooltip);
+        });
+
+        // Adiciona evento mouseout para remover a hora
+        taskItem.addEventListener('mouseout', function() {
+            const tooltip = taskItem.querySelector('.tooltip');
+            if (tooltip) {
+                taskItem.removeChild(tooltip);
+            }
+        });
+
+        document.getElementById('box-lista').appendChild(taskItem);
+        input.value = ''; // Limpa o campo de entrada
+    }
+}
+
+function addTask(button) {
     const input = button ? button.previousElementSibling : caixaescreve;
     const taskText = sanitizeInput(input.value);
 
@@ -45,15 +80,16 @@ function addTask(button) {
     }
 }
 
+
 boxlista.addEventListener("click", handleTaskClick);
 deletedTasksList.addEventListener("click", handleDeletedTaskClick);
 
 function handleTaskClick(e) {
     if (e.target.tagName === "LI") {
         e.target.classList.toggle("verificado");
-        saveTasks();
+        saveTasks(); // Atualiza o localStorage quando uma tarefa for verificada
     } else if (e.target.tagName === "SPAN") {
-        moveTaskToDeleted(e.target);
+        moveTaskToDeleted(e.target); // Move a tarefa para a lista de deletados
     }
 }
 
@@ -68,31 +104,29 @@ function moveTaskToDeleted(target) {
         deletedTask.classList.add("checked");
     }
     deletedTask.innerHTML = `${taskText} <small>(${dateTime})</small> <button class="delete-btn">x</button>`;
+    deletedTask.setAttribute('data-original-list', target.parentElement.parentElement.id);
 
-    const originalList = target.parentElement.parentElement.id;
-    deletedTask.setAttribute('data-original-list', originalList);
-
+    // Adiciona a tarefa à lista de deletados
     deletedTasksList.appendChild(deletedTask);
     target.parentElement.remove();
-    updateEmptyMessage();
-    saveTasks();
+    saveTasks(); // Atualiza o localStorage
+    updateEmptyMessage(); // Verifica se a lista de deletados está vazia
 }
 
 deletedTasksList.addEventListener("click", handleDeletedTaskClick);
 
 function handleDeletedTaskClick(e) {
     if (e.target.tagName === "BUTTON" && e.target.classList.contains("delete-btn")) {
-        e.target.parentElement.remove();
-        updateEmptyMessage();
-        saveTasks();
-    } 
-    else if (e.target.tagName === "LI") {
-        restoreTask(e.target);
+        e.target.parentElement.remove(); // Remove a tarefa ao clicar no botão delete
+        saveTasks(); // Atualiza o localStorage
+        updateEmptyMessage(); // Verifica se a lista de deletados está vazia
+    } else if (e.target.tagName === "LI") {
+        restoreTask(e.target); // Restaura a tarefa ao clicar nela
     }
 }
 
 function restoreTask(taskElement) {
-    const taskText = taskElement.innerHTML.split(' <small>')[0];
+    const taskText = taskElement.innerHTML.split(' <small>')[0].trim(); // Pega o texto da tarefa
     const taskChecked = taskElement.classList.contains("checked");
 
     const originalListId = taskElement.getAttribute('data-original-list');
@@ -103,107 +137,108 @@ function restoreTask(taskElement) {
         return;
     }
 
+    // Verifica se a tarefa já está na lista para evitar duplicações
+    const taskExists = Array.from(originalList.getElementsByTagName('li')).some(li => {
+        return li.textContent.replace('\u00d7', '').trim() === taskText;
+    });
+
+    if (taskExists) {
+        return;
+    }
+
+    // Cria e adiciona a tarefa de volta à lista original
     const restoredTask = document.createElement("li");
     restoredTask.innerHTML = taskText;
-
-    restoredTask.addEventListener("click", handleTaskClick);
 
     if (taskChecked) {
         restoredTask.classList.add("verificado");
     }
-    
+
     const span = document.createElement("span");
     span.innerHTML = "\u00d7";
     restoredTask.appendChild(span);
 
+    // Adiciona a tarefa de volta à lista original
     originalList.appendChild(restoredTask);
-    updateEmptyMessage();
+
+    // Remove a tarefa restaurada da lista de deletados e atualiza o localStorage
     taskElement.remove();
-    saveTasks();
+    saveTasks(); // Salva o estado atualizado no localStorage
 }
 
 function saveTasks() {
     const lists = document.querySelectorAll('.box-to-do ul');
     lists.forEach((ul, index) => {
-        localStorage.setItem(`tasksList${index}`, ul.innerHTML);
+        localStorage.setItem(`tasksList${index}`, ul.innerHTML); // Salva as tarefas de cada lista
     });
-    localStorage.setItem("deletedTasks", deletedTasksList.innerHTML);
+
+    localStorage.setItem("deletedTasks", deletedTasksList.innerHTML); // Salva as tarefas deletadas
 }
 
 function loadTasks() {
     const lists = document.querySelectorAll('.box-to-do ul');
     lists.forEach((ul, index) => {
-        ul.innerHTML = localStorage.getItem(`tasksList${index}`) || '';
-
+        ul.innerHTML = localStorage.getItem(`tasksList${index}`) || ''; // Carrega cada lista
         ul.querySelectorAll('li').forEach(task => {
-            task.addEventListener("click", handleTaskClick);
+            task.addEventListener("click", handleTaskClick); // Adiciona o evento click a cada tarefa
         });
     });
-    deletedTasksList.innerHTML = localStorage.getItem("deletedTasks") || '';
 
+    deletedTasksList.innerHTML = localStorage.getItem("deletedTasks") || ''; // Carrega a lista de deletados
     deletedTasksList.querySelectorAll('li').forEach(task => {
-        task.addEventListener("click", handleDeletedTaskClick);
+        task.addEventListener("click", handleDeletedTaskClick); // Adiciona o evento click para restaurar
     });
 
-    updateEmptyMessage();
+    updateEmptyMessage(); // Atualiza a mensagem de vazio
 }
+
 
 function updateEmptyMessage() {
-    emptyMessage.style.display = deletedTasksList.children.length === 0 ? 'block' : 'none';
-}
-
-function mostrarLoginModal() {
-    showModal('loginModal');
-}
-
-function showModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.style.display = "block";
-}
-
-function fecharModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.style.display = "none";
+    emptyMessage.style.display = deletedTasksList.children.length === 0 ? 'block' : 'none'; // Atualiza a mensagem "sem tarefas"
 }
 
 function mostrarCadastroModal() {
-    showModal('cadastroModal'); 
+    const modal = document.getElementById('cadastroModal');
+    modal.style.display = 'block';  // Exibe o modal
 }
 
 function mostrarLoginModal() {
-    showModal('loginModal');
+    const modal = document.getElementById('loginModal');
+    modal.style.display = 'block';  // Exibe o modal
 }
 
 function showModal(modalId) {
     const modal = document.getElementById(modalId);
-    modal.style.display = "block"; 
-}
-
-function fecharModal(modalId) {
-    const modal = document.getElementById(modalId);
-    modal.style.display = "none"; 
+    if (!modal) {
+        console.error(`Modal com o ID '${modalId}' não foi encontrado.`);
+        return;
+    }
+    modal.style.display = "block"; // Exibe o modal novamente
+    modal.classList.remove('hidden'); // Remova qualquer classe de ocultação, se houver
 }
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    const modalContent = modal.querySelector(".modal-conteudo, .modal-conteudo-login");
-
-    modalContent.classList.add('saindo');
-    setTimeout(() => {
-        modal.style.display = "none"; 
-        modalContent.classList.remove('saindo'); 
-    }, 500);
+    modal.style.display = 'none';  // Esconde o modal
 }
 
 window.onclick = function(event) {
     const modals = ['cadastroModal', 'loginModal'];
     modals.forEach(modalId => {
         const modal = document.getElementById(modalId);
-        if (event.target === modal) {
-            closeModal(modalId);
+        if (modal) {
+            // Fechar o modal se o clique for fora do modal
+            if (event.target === modal) {
+                closeModal(modalId);
+            }
+            // Fechar o modal se o botão "X" for clicado
+            const closeButton = modal.querySelector('.fechar');
+            if (event.target === closeButton) {
+                closeModal(modalId);
+            }
         }
     });
-}
+};
 
 document.getElementById("formCadastro").addEventListener("submit", function(e) {
     e.preventDefault();
@@ -215,6 +250,13 @@ document.getElementById("formLogin").addEventListener("submit", function(e) {
     e.preventDefault();
     closeModal("loginModal");
     showUserArea();
+});
+
+document.querySelectorAll('.fechar').forEach(button => {
+    button.onclick = function() {
+        const modalId = this.closest('.modal, .modal-login').id;
+        closeModal(modalId);
+    };
 });
 
 function showUserArea() {
