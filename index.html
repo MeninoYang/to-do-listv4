@@ -29,7 +29,7 @@
     
     <div id="cadastroModal" class="modal">
         <div class="modal-conteudo">
-            <span class="fechar" onclick="fecharModal('cadastroModal')">&times;</span>
+            <span class="fechar" onclick="closeModal('cadastroModal')">&times;</span>
             <h2>Cadastro</h2>
             <form id="formCadastro">
                 <input class="NomeCadastro" type="text" placeholder="Nome de Usuário" required>
@@ -39,10 +39,10 @@
             </form>
         </div>
     </div>
-    
+
     <div id="loginModal" class="modal-login">
         <div class="modal-conteudo-login">
-            <span class="fechar" onclick="fecharModal('loginModal')">&times;</span>
+            <span class="fechar" onclick="closeModal('loginModal')">&times;</span>
             <h2>Login</h2>
             <form id="formLogin" onsubmit="event.preventDefault();">
                 <input class="EmailOuUsuario" type="text" id="emailOuUsuario" placeholder="Email ou Nome de Usuário">
@@ -51,6 +51,7 @@
             </form>
         </div>
     </div>
+
     <div class="menu-lateral-esquerda" id="menuLateralEsquerda">
         <div class="menu-toggle-esquerda" onclick="toggleLeftMenu()">
             <div class="arrow-esquerda"></div>
